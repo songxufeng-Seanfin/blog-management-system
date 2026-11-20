@@ -128,12 +128,12 @@
   </aside>
   <main>
     <article id="doc-tech" class="active"><h1>在线博客管理系统 · 技术文档</h1>
-<blockquote>项目 5 / 两周行动计划 · Java 方向<br>v1.0 · 2026-11-20 · Spring Boot 3.2.5 + MyBatis 3.0.3 + H2 + 手写 JWT + Vue 3<br>一句话骨架：<strong>浏览器发一句话 → 安检口验通行证 → Controller 收和回 → Service 定规则 → Mapper 翻成 SQL → H2 存数据；中间加一层缓存，让重复的问题不必每次都问数据库。</strong></blockquote>
+<blockquote>项目 5 / 两周行动计划 · Java 方向<br>v1.0 · 2026-11-20 · Spring Boot 3.2.5 + MyBatis 3.0.3 + H2 + 手写 JWT + Vue 3<br>请求从浏览器进来，先过安检口验通行证，Controller 收和回，Service 定规则，Mapper 翻成 SQL，H2 存数据；中间加了一层缓存，重复的问题不用每次都问数据库。</blockquote>
 <hr>
 <span class="anchor" id="0-这份文档怎么读"></span>
 <h2 id="sec-1">0. 这份文档怎么读</h2>
 <p>前四个项目用的是 Python / Django，这个项目第一次换到 Java / Spring Boot。但<strong>骨架是同一套</strong>：都是「路由 → 视图 → 模型 → 数据库」，只是每个零件的名字变了。</p>
-<p>文档按「由外向内」的顺序写：先看用户能点什么，再看请求怎么走，再看代码分几层，最后才钻进 JWT、SQL、缓存这些细节。每一节开头都有一句白话，专有名词第一次出现时用括号解释。如果只想搞懂「我做了什么」，读第 1、2、3、14 节就够了；想自己改代码，再往下读。</p>
+<p>文档从用户能点什么开始，接着是请求怎么走、代码分几层，最后才进到 JWT、SQL、缓存这些细节。专有名词第一次出现时用括号解释。只想弄清「做了什么」，读第 1、2、3、14 节；要动手改代码再往下看。</p>
 <hr>
 <span class="anchor" id="1-这个项目交付了什么"></span>
 <h2 id="sec-2">1. 这个项目交付了什么</h2>
@@ -417,14 +417,14 @@ curl --noproxy &#x27;*&#x27; -X POST http://127.0.0.1:8003/api/auth/login/ \
 <p>这次的验证分了三层，各有各的存在理由：</p>
 <ul><li><strong>11 个 JUnit 5 + MockMvc</strong>：在进程内模拟 HTTP，不起端口、用独立内存库，验证上下文能起、JWT 校验、CRUD 生命周期、缓存 HIT。</li><li><strong>23 条 Python 端到端回归</strong>：真的走网络、真的写库、真的读回来，验证 JSON 序列化、拦截器写出的真实 401、删除后 404、重置。</li><li><strong>无头浏览器 + <code>?demo=1</code></strong>：验证 Vue 挂载、fetch 真的发出去、DOM 真的更新，桌面和 500px 手机端各截一张图。</li></ul>
 <p>三个数字：<code>Tests run: 11, Failures: 0</code>、<code>23 条 / 23 通过 / 0 失败</code>、13 步浏览器演示全渲染。</p>
-<p>这里又复用了一个跨项目的经验：机器上有全局 <code>HTTP_PROXY</code>，Python 的 <code>urllib</code> 默认会走代理，把 <code>127.0.0.1</code> 的请求也转发出去，拿回来的是代理的 404 而不是自家接口。项目 4 为这个折腾过一次，这次我在 <code>e2e_api.py</code> 里一开始就写了 <code>ProxyHandler({})</code>，<code>curl</code> 验证也一律加 <code>--noproxy '*'</code>。<strong>踩过的坑写进文档，才算真的踩完了。</strong></p>
+<p>这里又复用了一个跨项目的经验：机器上有全局 <code>HTTP_PROXY</code>，Python 的 <code>urllib</code> 默认会走代理，把 <code>127.0.0.1</code> 的请求也转发出去，拿回来的是代理的 404 而不是自家接口。项目 4 为这个折腾过一次，这次我在 <code>e2e_api.py</code> 里一开始就写了 <code>ProxyHandler({})</code>，<code>curl</code> 验证也一律加 <code>--noproxy '*'</code>。坑写进文档，下次才不用再踩一遍。</p>
 <hr>
 <span class="anchor" id="七写在最后"></span>
 <h2 id="sec-7">七、写在最后</h2>
 <p>这个项目做完，我最踏实的变化不是「会写 SpringBoot 了」，而是：再看到任何后端项目，我脑子里先出现的是那条固定链路——<strong>谁接请求、谁定规则、谁翻译 SQL、谁存数据、哪一步可以抄近路（缓存）、哪一步必须验身份（安检口）</strong>。框架只是把这条链路上的零件换了个名字。</p>
-<p>按两周计划，第 5、6 项是 Java 方向二选一，我选了博客系统而不是 IM，因为它和前四个 Web 项目能连成一条线：交易 → 消息可靠性 → 文件上传 → 接口测试 → 换语言重做同一套骨架。简历上摆出来，是一条「从业务功能到工程质量、再到跨语言迁移」的路线，而不是五个互不相干的小 demo。</p>
+<p>按两周计划，Java 方向先做了博客系统，因为它和前四个 Web 项目能连成一条线：交易 → 消息可靠性 → 文件上传 → 接口测试 → 换语言重做同一套骨架。简历上摆出来，是一条「从业务功能到工程质量、再到跨语言迁移」的路线，而不是五个互不相干的小 demo。</p>
 <p>剩下还没做的，我都不打算藏：真 MySQL、BCrypt、JWT 黑名单、文章归属校验、深分页优化。技术文档第 15 节列成了一张表。下次有人问「你这个项目能上线吗」，我希望自己的回答是「哪些能、哪些还差、为什么先不做」，而不是一句含糊的「差不多吧」。</p>
-<p>如果你也在从 Python 往 Java 转，我的建议只有一句：<strong>别急着背注解，先找一条最简单的请求，从头到尾跟一遍。</strong> 跟完一遍，<code>@RestController</code>、<code>@Service</code>、<code>@MapperScan</code> 这些词自己就长到场景里去了。</p>
+<p>从 Python 转过来，我觉得别急着背注解，先找一条最简单的请求从头到尾跟一遍。跟完一遍，<code>@RestController</code>、<code>@Service</code>、<code>@MapperScan</code> 这些词自己就长到场景里去了。</p>
 <hr>
 <p><em>配套代码、技术文档与离线阅读版都在同一个仓库的 <code>docs/</code> 目录。</em></p></article>
   </main>

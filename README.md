@@ -1,7 +1,7 @@
 # 在线博客管理系统（项目 5）
 
 > Spring Boot 3.2 + MyBatis + H2 + 手写 JWT + Vue 3 · Java 方向
-> 一句话骨架：**浏览器发一句话 → 安检口验通行证 → Controller 收和回 → Service 定规则 → Mapper 翻成 SQL → H2 存数据；中间加一层缓存，让重复的问题不必每次都问数据库。**
+> 请求从浏览器进来，先过安检口验通行证，Controller 收和回，Service 定规则，Mapper 翻成 SQL，H2 存数据；中间加了一层缓存，重复的问题不用每次都问数据库。
 
 一个能真正跑起来、能看懂的在线博客后端：注册登录、文章草稿/发布/下架、分类、搜索分页、评论互动、统计概览，全部走真实 HTTP 接口；前端是一个 Vue 3 单页看板，带「一键演示」把整条链路当场跑给你看。
 
@@ -10,7 +10,7 @@
 | 文件 | 内容 |
 |---|---|
 | [docs/reader.html](./docs/reader.html) | **推荐先看**：技术文档 + 博客的双 Tab 离线阅读版，双击即开，不用联网 |
-| [docs/technical-doc.md](./docs/technical-doc.md) | 技术文档 19 节：由外向内讲清请求往返、三层架构、数据模型、JWT、MyBatis、双后端缓存、测试体系、8 条踩坑复盘、术语速查 |
+| [docs/technical-doc.md](./docs/technical-doc.md) | 技术文档 19 节：请求往返、三层架构、数据模型、JWT、MyBatis、双后端缓存、测试体系、8 条踩坑复盘、术语速查 |
 | [docs/blog-post.md](./docs/blog-post.md) | 第一人称复盘：第一次用 Java 写后端时，把「请求怎么走一圈」重做一遍的过程 |
 | [docs/build_reader.py](./docs/build_reader.py) | 由两份 Markdown 重新生成 reader.html 的脚本 |
 | [reports/e2e_result.json](./reports/e2e_result.json) | 一次完整的 23 条端到端回归结果样例 |
@@ -62,7 +62,7 @@ tests/e2e_api.py            真实 HTTP 端到端回归
 docs/ reports/              文档四件套 / 回归结果样例
 ```
 
-## 技术要点（白话版）
+## 实现里的几个点
 
 - **三层架构**：Controller 只管收和回，Service 只管规则，Mapper 只管 SQL。分三份不是为了好看，是为了改一处不牵动另外两处。
 - **手写 JWT**：登录成功发一张带签名的通行证，之后每次请求带在 `Authorization: Bearer ...` 里。服务器只验签名、不存登录记录；`AuthInterceptor` 是那道安检口，写操作必须带票，读接口放行。
@@ -73,4 +73,4 @@ docs/ reports/              文档四件套 / 回归结果样例
 
 ## 离生产还差什么
 
-JWT 密钥目前写在配置里（应换成环境变量）、密码哈希是演示级简化版（应换 BCrypt）、没有刷新令牌与注销黑名单、H2 应换 MySQL + Flyway、缓存没有空值防穿透。这些在[技术文档第 15 节](./docs/technical-doc.md)里逐条列了原因和改法——**这是刻意留在明面上的教学边界，不是遗漏**。
+JWT 密钥目前写在配置里（应换成环境变量）、密码哈希是演示级简化版（应换 BCrypt）、没有刷新令牌与注销黑名单、H2 应换 MySQL + Flyway、缓存没有空值防穿透。这些在[技术文档第 15 节](./docs/technical-doc.md)里逐条列了原因和改法，没有藏起来。
