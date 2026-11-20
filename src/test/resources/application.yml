@@ -1,0 +1,31 @@
+# 测试专用配置：独立内存库，绝不碰运行中的 runtime/blogdb
+server:
+  port: 0
+spring:
+  datasource:
+    url: jdbc:h2:mem:blogtest;MODE=MySQL;DATABASE_TO_LOWER=TRUE;DB_CLOSE_DELAY=-1
+    driver-class-name: org.h2.Driver
+    username: sa
+    password: ""
+  sql:
+    init:
+      mode: always
+      encoding: UTF-8
+  data:
+    redis:
+      host: 127.0.0.1
+      port: 6379
+      timeout: 300ms
+      connect-timeout: 200ms
+mybatis:
+  configuration:
+    map-underscore-to-camel-case: true
+app:
+  jwt:
+    secret: test-only-secret
+    ttl-seconds: 3600
+  cache:
+    prefer: memory
+    ttl-seconds: 60
+  demo:
+    seed-on-startup: true

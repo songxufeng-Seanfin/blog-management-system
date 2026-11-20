@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#2563eb">
+  <title>在线博客管理系统 · 可视化演示</title>
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+<div id="app" v-cloak>
+
+  <header class="hero">
+    <div class="hero-inner">
+      <div class="hero-text">
+        <div class="eyebrow">PROJECT 05 · JAVA 方向 · 由外向内看一次请求</div>
+        <h1>在线博客管理系统</h1>
+        <p class="sub">SpringBoot + MyBatis + JWT + 双后端缓存 + Vue 3　·　写文章、发评论、看缓存怎么命中</p>
+      </div>
+      <div class="hero-badges">
+        <span class="badge">Java {{ state.java || '—' }}</span>
+        <span class="badge" :class="cacheBackend === 'redis' ? 'badge-ok' : 'badge-warn'">
+          缓存：{{ cacheLabel }}
+        </span>
+        <span class="badge">H2 · MySQL 兼容模式</span>
+      </div>
+    </div>
+  </header>
+
+  <main class="wrap">
+
+    <!-- 统计卡 -->
+    <section class="stats">
+      <div class="stat"><span class="stat-label">文章总数</span><b>{{ ov.articles ?? 0 }}</b><span class="stat-foot">article 表</span></div>
+      <div class="stat"><span class="stat-label">已发布</span><b class="c-green">{{ ov.published ?? 0 }}</b><span class="stat-foot">status = published</span></div>
+      <div class="stat"><span class="stat-label">草稿</span><b class="c-amber">{{ ov.drafts ?? 0 }}</b><span class="stat-foot">status = draft</span></div>
+      <div class="stat"><span class="stat-label">评论 / 浏览</span><b>{{ ov.comments ?? 0 }} <small>/ {{ ov.views ?? 0 }}</small></b><span class="stat-foot">comment 表 / view_count</span></div>
+      <div class="stat"><span class="stat-label">缓存命中率</span><b class="c-blue">{{ (cache.hit_rate ?? 0) }}%</b><span class="stat-foot">{{ cache.hits ?? 0 }} 命中 / {{ cache.misses ?? 0 }} 回源</span></div>
+      <div class="stat"><span class="stat-label">API 请求数</span><b>{{ ov.api_calls ?? 0 }}</b><span class="stat-foot">本次启动累计</span></div>
+    </section>
+
+    <!-- 架构骨架 -->
+    <section class="card">
+      <div class="card-head">
+        <h2>① 一次请求走过的四层</h2>
+        <span class="tag">由外向内 · 先看骨架</span>
+      </div>
+      <div class="flow">
+        <div class="node"><b>浏览器</b><span>Vue 3 / fetch</span></div>
+        <div class="arrow">→</div>
+        <div class="node"><b>安检口</b><span>Interceptor + JWT</span></div>
+        <div class="arrow">→</div>
+        <div class="node"><b>Controller</b><span>接请求 / 返 JSON</span></div>
+        <div class="arrow">→</div>
+        <div class="node"><b>Service</b><span>业务规则 + 缓存</span></div>
+        <div class="arrow">→</div>
+        <div class="node"><b>Mapper</b><span>MyBatis 写 SQL</span></div>
+        <div class="arrow">→</div>
+        <div class="node node-db"><b>H2 数据库</b><span>5 张表</span></div>
+      </div>
+      <p class="hint">白话：浏览器发一句话 → 安检口先验通行证 → Controller 只负责「收和回」→ Service 决定怎么做（要不要走缓存）→ Mapper 把动作翻译成 SQL → 数据库真正存数据。<b>写操作</b>要带 <code>Authorization: Bearer &lt;token&gt;</code>，<b>读操作</b>公开。</p>
+    </section>
+
+    <!-- 操作台 -->
+    <section class="grid2">
+      <div class="card">
+        <div class="card-head"><h2>② 操作台</h2><span class="tag">真实接口 · 不是假动画</span></div>
+
+        <div class="login-row">
+          <input v-model="loginForm.username" placeholder="用户名" aria-label="用户名">
+          <input v-model="loginForm.password" type="password" placeholder="密码" aria-label="密码">
+          <button class="btn" @click="doLogin">登录拿 token</button>
+        </div>
+        <p class="hint" :class="user ? 'ok-text' : ''">
+          {{ user ? '已登录：' + user.nickname + '（' + user.role + '）　token ' + token.slice(0, 18) + '…' : '演示账号 alice / 123456；未登录时写操作会被安检口拦下（401）' }}
+        </p>
+
+        <div class="btn-row">
+          <button class="btn btn-primary" :disabled="running" @click="runDemo">
+            {{ running ? '演示进行中…' : '▶ 一键跑完整流程' }}
+          </button>
+          <button class="btn" :disabled="running" @click="resetDemo">重置演示数据</button>
+          <button class="btn" :disabled="running" @click="switchBackend(cacheBackend === 'redis' ? 'memory' : 'redis')">
+            切换缓存 → {{ cacheBackend === 'redis' ? '内存' : 'Redis' }}
+          </button>
+          <button class="btn" @click="loadAll">刷新</button>
+        </div>
+
+        <div class="cache-line">
+          <span class="pill pill-muted">当前后端</span>
+          <b>{{ cache.backend_label || '—' }}</b>
+          <span class="pill" :class="cache.redis_available ? 'pill-green' : 'pill-amber'">
+            Redis {{ cache.redis_available ? '可用' : '不可用 · 已自动回退' }}
+          </span>
+          <span class="pill pill-muted">TTL {{ cache.ttl_seconds ?? 0 }}s</span>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-head"><h2>③ 这一站用了什么</h2><span class="tag">白话对照</span></div>
+        <table class="tbl tbl-tight">
+          <thead><tr><th>层</th><th>技术</th><th>白话解释</th></tr></thead>
+          <tbody>
+            <tr><td>接请求</td><td>Spring Boot 3.2</td><td>Java 版的 Django，帮我们把服务器和对象都装配好</td></tr>
+            <tr><td>安检</td><td>手写 JWT</td><td>盖钢印的通行证，服务器只验签名、不存登录状态</td></tr>
+            <tr><td>业务</td><td>Service 层</td><td>规则写在这里：草稿能不能发、缓存什么时候该清</td></tr>
+            <tr><td>存数据</td><td>MyBatis + H2</td><td>手写 SQL 的翻译员 + 不用安装的嵌入式数据库</td></tr>
+            <tr><td>提速</td><td>双后端缓存</td><td>有 Redis 用 Redis，没有就自动用内存，页面会标明</td></tr>
+            <tr><td>页面</td><td>Vue 3</td><td>数据一变，页面自己跟着变，不用整页刷新</td></tr>
+          </tbody>
+        </table>
+        <p class="hint">技术栈清单（来自后端 <code>/api/demo/state/</code>）：<span v-for="(v,k) in state.stack" :key="k" class="pill pill-muted inline-pill">{{ k }} · {{ v }}</span></p>
+      </div>
+    </section>
+
+    <!-- 演示步骤 -->
+    <section class="card" v-if="steps.length">
+      <div class="card-head"><h2>④ 一键演示：每一步都是真实 HTTP</h2><span class="tag">{{ steps.length }} 步</span></div>
+      <div class="steps">
+        <div class="step" v-for="s in steps" :key="s.step">
+          <span class="step-no">{{ s.step }}</span>
+          <div class="step-main">
+            <b>{{ s.name }}</b>
+            <span class="mono">{{ s.method }} {{ s.path }}</span>
+          </div>
+          <span class="pill" :class="s.status === 401 || s.status >= 400 ? 'pill-amber' : 'pill-green'">{{ s.status }}</span>
+          <span class="step-note">{{ s.note }}</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- 文章编辑 -->
+    <section class="grid2">
+      <div class="card">
+        <div class="card-head"><h2>⑤ 写一篇新文章</h2><span class="tag">需要 token</span></div>
+        <div class="form-row"><input v-model="form.title" placeholder="标题（必填）"></div>
+        <div class="form-row"><input v-model="form.summary" placeholder="摘要（一句话）"></div>
+        <div class="form-row two">
+          <select v-model="form.categoryId"><option :value="null">选择分类</option><option v-for="c in state.categories" :key="c.id" :value="c.id">{{ c.name }}</option></select>
+          <select v-model="form.status"><option value="draft">存为草稿</option><option value="published">直接发布</option></select>
+        </div>
+        <div class="form-row"><textarea v-model="form.content" rows="4" placeholder="正文内容"></textarea></div>
+        <button class="btn btn-primary" @click="saveArticle">保存到数据库</button>
+        <span class="hint inline-hint">保存后相关缓存会自动失效，列表立刻能看到新文章。</span>
+      </div>
+
+      <div class="card">
+        <div class="card-head"><h2>⑥ 文章列表</h2><span class="tag">分页 / 筛选 / 搜索</span></div>
+        <div class="filter-row">
+          <select v-model="filters.status" @change="onFilter"><option value="all">全部状态</option><option value="published">已发布</option><option value="draft">草稿</option></select>
+          <select v-model="filters.categoryId" @change="onFilter"><option value="">全部分类</option><option v-for="c in state.categories" :key="c.id" :value="c.id">{{ c.name }}</option></select>
+          <input v-model="filters.kw" @keyup.enter="onFilter" placeholder="搜索标题 / 摘要">
+          <button class="btn" @click="onFilter">查询</button>
+        </div>
+        <div class="article-list">
+          <div class="article" v-for="a in articlePage.items" :key="a.id" @click="openDetail(a)">
+            <div class="article-top">
+              <b>{{ a.title }}</b>
+              <span class="pill" :class="a.status === 'published' ? 'pill-green' : 'pill-amber'">{{ a.status === 'published' ? '已发布' : '草稿' }}</span>
+            </div>
+            <div class="article-meta">
+              <span>{{ a.categoryName || '未分类' }}</span><span>·</span><span>{{ a.authorName || '—' }}</span><span>·</span>
+              <span>{{ fmt(a.createdAt) }}</span><span>·</span><span>{{ a.viewCount ?? 0 }} 浏览</span>
+            </div>
+            <div class="article-sum">{{ a.summary }}</div>
+          </div>
+          <p class="hint" v-if="!articlePage.items || !articlePage.items.length">没有符合条件的文章，换个筛选试试。</p>
+        </div>
+        <div class="pager">
+          <button class="btn btn-sm" :disabled="filters.page <= 1" @click="changePage(-1)">上一页</button>
+          <span>第 {{ filters.page }} / {{ articlePage.totalPages || 1 }} 页 · 共 {{ articlePage.total ?? 0 }} 篇</span>
+          <button class="btn btn-sm" :disabled="filters.page >= (articlePage.totalPages || 1)" @click="changePage(1)">下一页</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- 详情 + 评论 -->
+    <section class="card" v-if="current">
+      <div class="card-head">
+        <h2>⑦ 文章详情与评论</h2>
+        <span class="tag">点列表任意一行切换</span>
+      </div>
+      <div class="detail-grid">
+        <div>
+          <h3 class="detail-title">{{ current.title }}</h3>
+          <p class="hint">{{ current.categoryName }} · {{ current.authorName }} · {{ current.viewCount }} 次浏览 · {{ fmt(current.publishedAt || current.createdAt) }}</p>
+          <p class="detail-body">{{ current.content }}</p>
+          <div class="btn-row">
+            <button class="btn btn-sm" @click="publish(current)" v-if="current.status === 'draft'">发布</button>
+            <button class="btn btn-sm" @click="unpublish(current)" v-else>转为草稿</button>
+            <button class="btn btn-sm btn-danger" @click="removeArticle(current)">删除</button>
+          </div>
+        </div>
+        <div>
+          <div class="comment-list">
+            <div class="comment" v-for="c in comments" :key="c.id">
+              <b>{{ c.authorName }}</b><span class="hint"> {{ fmt(c.createdAt) }}</span>
+              <p>{{ c.content }}</p>
+            </div>
+            <p class="hint" v-if="!comments.length">还没有评论，来写第一条。</p>
+          </div>
+          <div class="form-row two">
+            <input v-model="commentForm.authorName" placeholder="你的名字">
+            <input v-model="commentForm.content" @keyup.enter="addComment" placeholder="说点什么…">
+          </div>
+          <button class="btn btn-sm btn-primary" @click="addComment">发表评论</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- 两条流水 -->
+    <section class="grid2">
+      <div class="card">
+        <div class="card-head"><h2>⑧ 缓存事件时间线</h2><span class="tag">最近 {{ state.cache_events?.length || 0 }} 条</span></div>
+        <div class="table-scroll">
+          <table class="tbl">
+            <thead><tr><th>时间</th><th>动作</th><th>缓存键</th><th>结果</th></tr></thead>
+            <tbody>
+              <tr v-for="e in state.cache_events" :key="e.id">
+                <td class="mono">{{ fmt(e.createdAt) }}</td>
+                <td>{{ e.kind }}</td>
+                <td class="mono ellipsis" :title="e.cacheKey">{{ e.cacheKey }}</td>
+                <td><span class="pill" :class="pillClass(e.result)">{{ e.result }}</span></td>
+              </tr>
+              <tr v-if="!state.cache_events?.length"><td colspan="4" class="hint">暂无事件，点一下「一键跑完整流程」。</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-head"><h2>⑨ API 请求流水</h2><span class="tag">安检口记录</span></div>
+        <div class="table-scroll">
+          <table class="tbl">
+            <thead><tr><th>时间</th><th>方法</th><th>路径</th><th>状态</th><th>耗时</th></tr></thead>
+            <tbody>
+              <tr v-for="l in state.api_logs" :key="l.id">
+                <td class="mono">{{ l.time }}</td>
+                <td><span class="pill pill-muted">{{ l.method }}</span></td>
+                <td class="mono ellipsis" :title="l.path">{{ l.path }}</td>
+                <td><span class="pill" :class="l.status >= 400 ? 'pill-amber' : 'pill-green'">{{ l.status }}</span></td>
+                <td class="mono">{{ l.cost_ms }}ms</td>
+              </tr>
+              <tr v-if="!state.api_logs?.length"><td colspan="5" class="hint">暂无请求。</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <footer>
+      在线博客管理系统 · 项目 5　|　源码、文档与博客见仓库 <span class="mono">docs/</span>　|　
+      <span class="mono">GET /api/demo/state/</span> 一次拿齐本页所有数据
+    </footer>
+  </main>
+
+  <div class="toast" v-if="toast.show" :class="toast.type">{{ toast.text }}</div>
+</div>
+
+<script src="/vendor/vue.global.prod.js"></script>
+<script src="/app.js"></script>
+</body>
+</html>

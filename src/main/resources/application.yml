@@ -1,0 +1,53 @@
+server:
+  port: ${BLOG_PORT:8003}
+  servlet:
+    encoding:
+      charset: UTF-8
+      enabled: true
+      force: true
+
+spring:
+  application:
+    name: blog-management-system
+  datasource:
+    # MODE=MySQL：让 H2 说"MySQL 方言"，将来换真 MySQL 只改这一行
+    url: jdbc:h2:file:./runtime/blogdb;MODE=MySQL;DATABASE_TO_LOWER=TRUE
+    driver-class-name: org.h2.Driver
+    username: sa
+    password: ""
+  sql:
+    init:
+      mode: always
+      encoding: UTF-8
+      continue-on-error: false
+  data:
+    redis:
+      host: ${BLOG_REDIS_HOST:127.0.0.1}
+      port: ${BLOG_REDIS_PORT:6379}
+      timeout: 800ms
+      connect-timeout: 500ms
+  jackson:
+    default-property-inclusion: non_null
+    date-format: yyyy-MM-dd HH:mm:ss
+    serialization:
+      write-dates-as-timestamps: false
+
+mybatis:
+  configuration:
+    map-underscore-to-camel-case: true
+
+app:
+  jwt:
+    secret: ${BLOG_JWT_SECRET:blog-dev-secret-please-change-in-production}
+    ttl-seconds: 86400
+  cache:
+    # auto = 启动时探测 Redis，能连上就用，连不上回退内存；也可强制 memory / redis
+    prefer: ${BLOG_CACHE_PREFER:auto}
+    ttl-seconds: 120
+  demo:
+    seed-on-startup: true
+
+logging:
+  level:
+    com.xufeng.blog: INFO
+    org.mybatis: WARN

@@ -1,0 +1,124 @@
+{
+  "base_url": "http://127.0.0.1:8003",
+  "run_at": "2026-11-20T12:55:36",
+  "total": 23,
+  "passed": 23,
+  "failed": 0,
+  "cases": [
+    {
+      "name": "健康检查返回 UP",
+      "ok": true,
+      "detail": "ok"
+    },
+    {
+      "name": "正确账号登录拿到 JWT",
+      "ok": true,
+      "detail": "ok"
+    },
+    {
+      "name": "错误密码被拒绝",
+      "ok": true,
+      "detail": "用户名或密码错误"
+    },
+    {
+      "name": "无 token 访问 /me 被安检口拦下",
+      "ok": true,
+      "detail": "HTTP 401 / 缺少或无效的访问令牌，请先登录"
+    },
+    {
+      "name": "带 token 访问 /me 成功",
+      "ok": true,
+      "detail": "ok"
+    },
+    {
+      "name": "篡改签名后的 token 被拒绝",
+      "ok": true,
+      "detail": "HTTP 401"
+    },
+    {
+      "name": "同一缓存键第二次读取命中 HIT",
+      "ok": true,
+      "detail": "命中数 0 → 4"
+    },
+    {
+      "name": "分页返回 3 条且总数正确",
+      "ok": true,
+      "detail": "total=8 pages=3"
+    },
+    {
+      "name": "状态筛选只返回草稿",
+      "ok": true,
+      "detail": "2 条"
+    },
+    {
+      "name": "关键词搜索命中标题含 JWT 的文章",
+      "ok": true,
+      "detail": "1 条"
+    },
+    {
+      "name": "无 token 写文章被拦下（401）",
+      "ok": true,
+      "detail": "HTTP 401"
+    },
+    {
+      "name": "带 token 创建草稿文章",
+      "ok": true,
+      "detail": "id=18"
+    },
+    {
+      "name": "详情接口返回刚创建的文章",
+      "ok": true,
+      "detail": "ok"
+    },
+    {
+      "name": "草稿发布后状态变 published",
+      "ok": true,
+      "detail": "ok"
+    },
+    {
+      "name": "写操作后缓存失效，列表能看到新文章",
+      "ok": true,
+      "detail": "1 条"
+    },
+    {
+      "name": "给文章新增评论",
+      "ok": true,
+      "detail": "ok"
+    },
+    {
+      "name": "评论列表包含刚写的评论",
+      "ok": true,
+      "detail": "1 条"
+    },
+    {
+      "name": "已发布文章可转回草稿",
+      "ok": true,
+      "detail": "ok"
+    },
+    {
+      "name": "删除文章成功",
+      "ok": true,
+      "detail": "ok"
+    },
+    {
+      "name": "删除后再查返回业务 404",
+      "ok": true,
+      "detail": "文章不存在：18"
+    },
+    {
+      "name": "无 Redis 时切换请求安全回退内存",
+      "ok": true,
+      "detail": "Redis 不可用（或指定为内存），当前使用 JVM 内存缓存"
+    },
+    {
+      "name": "统计接口返回文章与缓存数据",
+      "ok": true,
+      "detail": "ok"
+    },
+    {
+      "name": "重置演示数据回到 8 篇文章",
+      "ok": true,
+      "detail": "{'users': 4, 'categories': 4, 'articles': 8, 'published': 6, 'drafts': 2, 'comments': 6}"
+    }
+  ]
+}

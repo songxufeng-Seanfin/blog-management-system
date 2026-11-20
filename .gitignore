@@ -2,3 +2,19 @@ target/
 *.class
 .idea/
 *.iml
+
+# Maven 工具链由 start.py 按需下载，不入库
+tools/
+
+# 运行期数据：H2 数据库文件与日志
+runtime/
+*.db
+*.log
+*.mv.db
+*.trace.db
+
+# 测试 / 报告产物
+allure-results/
+.pytest_cache/
+__pycache__/
+*.pyc
